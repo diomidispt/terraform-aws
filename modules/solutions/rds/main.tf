@@ -1,7 +1,7 @@
 resource "aws_db_subnet_group" "this" {
   name        = "${lower(var.env_name)}-${lower(var.env_type)}-db"
   description = "DB subnet group for ${var.env_name}-${var.env_type}"
-  subnet_ids  = var.subnet_ids
+  subnet_ids  = length(var.subnet_ids) > 0 ? var.subnet_ids : data.aws_subnets.private.ids
 }
 
 resource "aws_db_instance" "this" {
@@ -11,11 +11,11 @@ resource "aws_db_instance" "this" {
   vpc_security_group_ids = var.security_group_ids
   publicly_accessible    = false
 
-  engine         = var.db.engine
-  engine_version = var.db.engine_version
-  db_name        = var.db.name
-  username       = var.db.username
-  password       = var.db.password
+  engine                      = var.db.engine
+  engine_version              = var.db.engine_version
+  db_name                     = var.db.name
+  username                    = var.db.username
+  manage_master_user_password = true
 
   allocated_storage = var.db.allocated_storage
   storage_type      = "gp2"

@@ -1,3 +1,20 @@
+variable "account" {
+  description = "An object containing info for the target AWS account"
+  type = object({
+    id    = string
+    name  = string
+    alias = string
+  })
+}
+
+variable "region" {
+  description = "An object containing info for the target AWS region"
+  type = object({
+    id   = string
+    name = string
+  })
+}
+
 variable "env_name" {
   description = "The name for this environment (e.g., sauron)"
   type        = string
@@ -8,19 +25,13 @@ variable "env_type" {
   type        = string
 }
 
-variable "subnet_ids" {
-  description = "Optional explicit private subnet IDs. If empty, the module looks up the VPC's private subnets by tag (see data.tf)."
-  type        = list(string)
-  default     = []
-}
-
-variable "security_group_ids" {
-  description = "List of security group IDs to attach to the RDS instance"
-  type        = list(string)
+variable "rds_sg_id" {
+  description = "RDS security group ID — from sauron-security-groups env output"
+  type        = string
 }
 
 variable "db" {
-  description = "RDS instance configuration"
+  description = "RDS instance configuration (no password here)"
   type = object({
     engine                  = string
     engine_version          = string

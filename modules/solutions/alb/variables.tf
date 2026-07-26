@@ -8,16 +8,6 @@ variable "env_type" {
   type        = string
 }
 
-variable "vpc_id" {
-  description = "The VPC ID to deploy the ALB in"
-  type        = string
-}
-
-variable "public_subnet_ids" {
-  description = "List of public subnet IDs for the ALB"
-  type        = list(string)
-}
-
 variable "security_group_ids" {
   description = "List of security group IDs to attach to the ALB"
   type        = list(string)

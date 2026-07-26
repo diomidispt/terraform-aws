@@ -3,7 +3,8 @@ resource "aws_lb" "this" {
   internal           = false
   load_balancer_type = "application"
   security_groups    = var.security_group_ids
-  subnets            = var.public_subnet_ids
+  # Public subnets looked up by tag convention (see data.tf).
+  subnets = data.aws_subnets.public.ids
 
   enable_deletion_protection = false
 }
@@ -12,7 +13,7 @@ resource "aws_lb_target_group" "this" {
   name        = "${lower(var.env_name)}-${lower(var.env_type)}-tg"
   port        = var.target_port
   protocol    = "HTTP"
-  vpc_id      = var.vpc_id
+  vpc_id      = data.aws_vpc.this.id
   target_type = "ip"
 
   health_check {
