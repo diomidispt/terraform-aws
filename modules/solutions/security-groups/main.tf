@@ -1,6 +1,6 @@
 resource "aws_security_group" "alb" {
   name        = "${var.env_name}-${var.env_type}-ALB-SG"
-  description = "ALB security group — allows HTTP from internet"
+  description = "ALB security group - allows HTTP from internet"
   vpc_id      = data.aws_vpc.this.id
 }
 
@@ -12,7 +12,7 @@ resource "aws_security_group" "ecs" {
 
 resource "aws_security_group" "rds" {
   name        = "${var.env_name}-${var.env_type}-RDS-SG"
-  description = "RDS security group — accepts only from ECS"
+  description = "RDS security group - accepts only from ECS"
   vpc_id      = data.aws_vpc.this.id
 }
 
