@@ -9,8 +9,9 @@ variable "env_type" {
 }
 
 variable "subnet_ids" {
-  description = "List of private subnet IDs for ECS tasks"
+  description = "Optional explicit private subnet IDs for ECS tasks. If empty, the module looks up the VPC's private subnets by tag."
   type        = list(string)
+  default     = []
 }
 
 variable "security_group_ids" {
