@@ -1,0 +1,26 @@
+terraform {
+  required_version = ">= 1.6.0"
+
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = ">= 5.7.0"
+    }
+    sops = {
+      source  = "carlpett/sops"
+      version = ">= 1.2.1"
+    }
+  }
+}
+
+provider "aws" {
+  region              = var.region.id
+  allowed_account_ids = [var.account.id]
+  default_tags {
+    tags = {
+      "tf:managed-by" : "terraform",
+      "owner" : "DevOps",
+      "purpose" : "secret-management"
+    }
+  }
+}
