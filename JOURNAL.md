@@ -138,3 +138,53 @@ Updated `envs/github-actions-ci-role/DioProjects-us-east-1-sauron-github-actions
 - Added `diomidispt/go-app:*` to `allowed_repos`
 - The OIDC trust policy now allows both `diomidispt/terraform-aws` and `diomidispt/go-app` to assume the `github-actions-ci` role
 - Required so the `go-app` CI/CD pipeline can authenticate to AWS and push images to ECR
+
+---
+
+## 26–27/07/2026
+
+### Three-tier app deployed on ECS Fargate (go-app)
+
+Deployed the full **internet → ALB → ECS Fargate → RDS** stack for the go-app pharma
+system, in dependency-ordered "waves". Each stack feeds the next via manually-wired
+tfvars (no `terraform_remote_state`); env-level `outputs.tf` (+ symlink) surface the
+values for the next wave.
+
+- **Wave 1 — `sauron-security-groups`** — new `modules/solutions/security-groups`
+  (ALB/ECS/RDS SGs + tiered rules). VPC discovered by tag via `data` source.
+- **Wave 2 — `sauron-alb` + `sauron-rds`** — ALB (LB + target group :8080 `/health`
+  + HTTP :80 listener) and RDS PostgreSQL 16.4 `db.t3.micro`.
+- **Wave 3 — `sauron-ecs-fargate`** — ECS cluster + Fargate service (from ECR
+  `go-app-dev:latest`) attached to the ALB target group, in private subnets.
+- **NAT gateway** enabled in `modules/solutions/vpc` (single-AZ) so private-subnet
+  tasks can reach ECR / Secrets Manager / CloudWatch.
+
+Patterns adopted (mirroring the `terraform` reference repo):
+- ALB/RDS/ECS look up VPC + subnets by `tag:Name` data sources instead of passing raw IDs.
+- **RDS AWS-managed master password**: `manage_master_user_password = true` → password
+  generated + stored in Secrets Manager. No password in git/tfvars/TF_VAR. The secret
+  ARN is an output; ECS injects `DB_PASSWORD` from it via the task's `secrets`.
+
+### Bugs hit and fixed (the interesting part)
+
+- **Non-ASCII in SG description** — em-dash (`—`) in `GroupDescription` → AWS
+  `InvalidParameterValue: Character sets beyond ASCII are not supported`. Replaced with `-`.
+- **RDS enforces SSL** — go-app connected with `sslmode=disable` → `pg_hba.conf ... no
+  encryption (SQLSTATE 28000)`. Changed `db.go` + `migrate.go` to `sslmode=require`.
+- **Password broke the migrate URL** — the AWS-generated password contained `:`, so
+  `postgres://user:pass@host` mis-parsed (`invalid port`). Rebuilt the URL with
+  `net/url` (`url.UserPassword`) so it's encoded. (`db.go` was fine — key=value DSN.)
+- **CI changed-env detection** — `git diff origin/main...HEAD` failed on PRs (shallow
+  checkout, unresolved ref) and `HEAD~1..HEAD` missed multi-commit pushes. Fixed:
+  `fetch-depth: 0` + diff against the event base SHA.
+
+App verified live: `GET /health → 200 {"status":"healthy"}` through the public ALB.
+
+### Torn down to ~$0 (kept the free scaffolding)
+
+To stop the ~$70/mo (NAT ~$32, ALB ~$16, RDS ~$13, Fargate ~$9): destroyed
+`ecs-fargate`, `alb`, `rds`, `security-groups`, and **re-commented NAT + re-applied
+`vpc`** (removed the NAT gateway/EIP but **kept the VPC/subnets/IGW**). Left intact
+(free/pennies): VPC, S3 state backend, DynamoDB, ECR image, IAM/OIDC roles.
+
+Added **`deploy-app-with-ecs.md`** — the wave-by-wave runbook to stand the app back up.
