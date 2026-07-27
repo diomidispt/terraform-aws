@@ -23,15 +23,15 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
-          fetch-depth: 2
+          fetch-depth: 0
 
       - name: Detect changed environments
         id: changed
         run: |
           if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
-            changed=$(git diff origin/main...HEAD --name-only)
+            changed=$(git diff --name-only "${{ github.event.pull_request.base.sha }}" HEAD)
           else
-            changed=$(git diff HEAD~1 HEAD --name-only)
+            changed=$(git diff --name-only "${{ github.event.before }}" "${{ github.sha }}")
           fi
           envs=$(echo "$changed" \
             | grep '^envs/' \
