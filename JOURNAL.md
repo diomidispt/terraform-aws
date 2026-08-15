@@ -229,3 +229,40 @@ Pushed straight to `main` intentionally, to see the real CI `plan` output — th
 `diomidispt`) before `terraform apply` would ever run. Left unapproved on purpose:
 plan-only run stays free; nothing gets created until the button is clicked.
 Confirmed via `aws eks list-clusters` (empty) that it's genuinely not deployed.
+
+### EKS — apply attempted, cluster came up, node group got stuck (no NAT) — destroy in progress
+
+Approved the CI `apply` and ran it (15/08):
+
+- **1st attempt failed fast**: `kubernetes_version = "1.31"` in
+  `envs/sauron-eks/.../terraform.tfvars` fell out of AWS standard support on
+  2025-11-26 (confirmed via `aws eks describe-cluster-versions`) — needs `EXTENDED`
+  support type now, which the tfvars comment was explicitly trying to avoid. The
+  `eks-secrets-key-DEV` KMS key + IAM roles/SG/launch template had already been
+  created before the cluster resource failed — a partial apply, not a clean rollback.
+  Bumped to `kubernetes_version = "1.36"` (current default, standard support until
+  2027-08-02) and re-pushed (`8e424b2`).
+- **2nd attempt: cluster came up** (`sauron-DEV-eks-cluster`, `ACTIVE`), but the
+  managed **node group got stuck in `CREATING`** for 30+ min. Root cause: the ASG
+  successfully launched an EC2 instance, but there's **no NAT Gateway in the VPC**
+  (deliberately removed 27/07 after the ECS app teardown, see above) — and since
+  `env_name != "prod"` the cluster only has a **public** API endpoint
+  (`endpoint_private_access = false`). Nodes sit in **private** subnets, so with no
+  NAT they have zero route to the internet — can't reach the public EKS API to
+  register, can't pull CNI/kube-proxy images. The node boots but can never join;
+  EKS just waits.
+- Cancelled the hung GitHub Actions run (`gh run cancel`). This left a stale
+  Terraform state lock in DynamoDB (`sauron-cicd-tfstate`, lock ID
+  `537b6db6-a8a9-b7fd-13f6-68a964a98a7c`, held by the cancelled runner) —
+  force-unlocked it (`terraform force-unlock`) so the stack isn't stuck.
+- **As of writing, `envs/sauron-eks` is still live** (control plane, KMS key,
+  IAM roles, SG, launch template, stuck node group) and needs a `terraform destroy`
+  — queued to run via the `terraform-destroy.yml` workflow
+  (`env_path=envs/sauron-eks/DioProjects-us-east-1-sauron-eks-DEV`) rather than
+  locally, so it goes through the same approval gate as everything else.
+
+**Takeaway:** this env can't actually reach `ACTIVE` node group without either (a) a
+NAT Gateway (~$32/mo) so private-subnet nodes get outbound internet, or (b) flipping
+`endpoint_private_access = true` *and* running nodes fully private with VPC
+endpoints instead of NAT (more setup, no NAT bill). Needs a decision before the next
+attempt — see PLAN.md.
