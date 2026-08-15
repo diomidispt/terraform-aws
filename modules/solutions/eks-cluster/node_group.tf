@@ -14,6 +14,8 @@ resource "aws_eks_node_group" "this" {
     max_unavailable = each.value.update_config.max_unavailable
   }
 
+  capacity_type = each.value.capacity_type
+
   launch_template {
     id      = aws_launch_template.eks_node_group.id
     version = aws_launch_template.eks_node_group.latest_version

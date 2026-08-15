@@ -122,6 +122,9 @@ variable "managed_node_groups" {
             max_unavailable = number
           }
         )
+        # "ON_DEMAND" (default) or "SPOT". Spot is ~70% cheaper but AWS can
+        # reclaim the node with a 2-minute warning — fine for dev/learning.
+        capacity_type = optional(string, "ON_DEMAND")
       }
     )
   )
