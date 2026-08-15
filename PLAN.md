@@ -25,6 +25,9 @@ Build a complete AWS infrastructure portfolio using Terraform — starting from 
 - [ ] Harden the ALB: add HTTPS (ACM cert + :443 listener + 80→443 redirect); consider `internal = true`
 - [ ] ECS deploy step in CI (build → push → `ecs update-service --force-new-deployment`) so image pushes auto-roll
 - [ ] Refactor `route-tables` from `count` to `for_each` (avoids the public-route churn when toggling NAT)
+- [x] `envs/sauron-kms` + `envs/sauron-secrets` scaffolding added (28/07) — KMS key found costing $1/mo unused, destroyed (15/08, `PendingDeletion` until 2026-08-22)
+- [x] `envs/sauron-eks` committed (15/08, `d4ad778`) — CI `apply` gate left unapproved on purpose, cluster **not deployed**
+- [ ] Approve the `sauron-eks` CI apply when actually ready to pay for EKS (control plane ~$73/mo + nodes)
 - [ ] Continue the roadmap: EKS → EMR Serverless → DR/HA
 
 ---
@@ -41,7 +44,7 @@ Build a complete AWS infrastructure portfolio using Terraform — starting from 
 | 6 | ECS Fargate cluster + ECR | ✅ done |
 | 7 | RDS (PostgreSQL) | ✅ done |
 | 8 | Three-tier app (ALB + ECS + RDS) | ✅ done + verified live |
-| 9 | EKS cluster | ☐ next |
+| 9 | EKS cluster | ☑ committed, not deployed (apply gate unapproved) |
 | 10 | EMR Serverless | ☐ |
 | 11 | Disaster recovery + high availability | ☐ |
 

@@ -2,9 +2,9 @@ env_name = "sauron"
 env_type = "DEV"
 vpc_name = "sauron-DEV-VPC"
 
-kubernetes_version           = "1.31"
+kubernetes_version           = "1.36"
 kubernetes_cidr              = "172.20.0.0/16" # service CIDR; does not overlap VPC 10.0.0.0/20
-cluster_upgrade_support_type = "STANDARD"      # avoids EXTENDED-support surcharges
+cluster_upgrade_support_type = "STANDARD"      # 1.36 in standard support until 2027-08-02; avoids EXTENDED-support surcharges
 deletion_protection          = false
 
 # IAM access — SSO admin = you (kubectl), CI role = pipeline. Viewers: none.

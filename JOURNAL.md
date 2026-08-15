@@ -188,3 +188,44 @@ To stop the ~$70/mo (NAT ~$32, ALB ~$16, RDS ~$13, Fargate ~$9): destroyed
 (free/pennies): VPC, S3 state backend, DynamoDB, ECR image, IAM/OIDC roles.
 
 Added **`deploy-app-with-ecs.md`** — the wave-by-wave runbook to stand the app back up.
+
+---
+
+## 28/07/2026 – 15/08/2026
+
+### KMS + SOPS secrets scaffolding — built, then torn down unused
+
+Committed (`55b0db7`) alongside the not-yet-wired EKS module: `modules/resources/kms`
+(customer-managed keys + aliases), `modules/resources/secrets` (Secrets Manager from a
+list), `envs/sauron-kms` (applied — the SOPS key itself), `envs/sauron-secrets`
+(SOPS-decrypted secrets, left at an empty baseline), and `.sops.yaml` wiring
+`secrets(.enc).json` → the sauron-dev-sops-key ARN. Not an EKS dependency — general
+reusable "git-committed encrypted secrets → Secrets Manager" plumbing, never populated.
+
+**Found unexpectedly costing money (15/08):** `envs/sauron-kms`'s customer-managed
+key (`sauron-dev-sops-key`) was live and protecting zero actual secrets —
+`envs/sauron-secrets` was never populated past the empty baseline. Customer-managed
+KMS keys bill a flat **$1/month** regardless of use (AWS-managed keys, e.g. the
+default Secrets Manager/DynamoDB keys, are free — easy to conflate the two).
+Confirmed via `terraform plan -destroy` in `envs/sauron-kms` that it matched the live
+key exactly, then `terraform destroy`. Key went to `PendingDeletion`; shortened the
+window from Terraform's default 30 days to AWS's minimum 7 days
+(`aws kms cancel-key-deletion` + `aws kms schedule-key-deletion --pending-window-in-days 7`)
+since the flat fee keeps prorating during the wait either way. Permanent deletion:
+2026-08-22. To recreate later: `terraform init && plan && apply` in
+`envs/sauron-kms/DioProjects-us-east-1-sauron-kms-DEV`.
+
+Also confirmed while investigating: Identity Center has a second, unassigned
+`KMS-Administrator` permission set (inline `kms:*` policy) sitting alongside
+`AdministratorAccess` — redundant, since `AdministratorAccess` already grants full
+KMS access. Left as-is (no cost, no risk).
+
+### EKS — committed, still not deployed
+
+Committed (`d4ad778`, 15/08) `envs/sauron-eks` (the DEV cluster stack) plus a small
+`eks-cluster` module addition (`capacity_type` per node group, `ON_DEMAND`/`SPOT`).
+Pushed straight to `main` intentionally, to see the real CI `plan` output — the
+`apply` job needs a manual approval click (`environment: apply`, required reviewer
+`diomidispt`) before `terraform apply` would ever run. Left unapproved on purpose:
+plan-only run stays free; nothing gets created until the button is clicked.
+Confirmed via `aws eks list-clusters` (empty) that it's genuinely not deployed.
