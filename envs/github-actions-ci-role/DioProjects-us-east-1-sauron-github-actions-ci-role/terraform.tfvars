@@ -21,6 +21,7 @@ iam_policy = {
         "elasticfilesystem:*",
         "secretsmanager:*",
         "acm:*",
+        "budgets:*",
         "docdb:*",
         "dynamodb:*",
         "ec2:*",
