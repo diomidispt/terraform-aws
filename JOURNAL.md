@@ -266,3 +266,24 @@ NAT Gateway (~$32/mo) so private-subnet nodes get outbound internet, or (b) flip
 `endpoint_private_access = true` *and* running nodes fully private with VPC
 endpoints instead of NAT (more setup, no NAT bill). Needs a decision before the next
 attempt — see PLAN.md.
+
+---
+
+## 17/08/2026
+
+### `envs/vpc` renamed to `envs/sauron-vpc`
+
+Pure rename (`efb6c37`) — brings the VPC env folder in line with the `sauron-*`
+naming convention already used by every other env (`sauron-budget`, `sauron-eks`,
+`sauron-ecr`, etc). No resource changes, just the folder + symlinks moved.
+
+### Budget alert — new `modules/resources/budget` + `envs/sauron-budget`
+
+Added (`b1690bb`) a small `aws_budgets_budget` module and applied it as
+`envs/sauron-budget/DioProjects-us-east-1-sauron-budget-DEV`:
+
+- **`sauron-monthly-budget`** — `$5`/month **COST** budget on the DEV account
+- Notification: **ACTUAL** spend `GREATER_THAN` **100%** of the limit (i.e. once
+  spend crosses $5 for the month) → emails `diomidispt@gmail.com`
+- Goal: get an early heads-up if something is left running and costing money
+  (same class of issue as the forgotten KMS key on 15/08, above)
