@@ -29,7 +29,7 @@ enabled on the VPC before ECS. **Teardown is the reverse.**
 aws sso login --profile sauron-admin      # local applies
 export AWS_PROFILE=sauron-admin AWS_REGION=us-east-1
 ```
-Already deployed and assumed present: `envs/vpc` (VPC + public/private subnets + IGW),
+Already deployed and assumed present: `envs/sauron-vpc` (VPC + public/private subnets + IGW),
 `envs/sauron-ecr` (`go-app-dev` repo), state backend, `github-actions-ci` OIDC role.
 
 Two ways to apply each stack:
@@ -49,7 +49,7 @@ the image from ECR, read the DB secret, or log to CloudWatch (tasks crash-loop).
    `nat_gateways` module block, and set the private route tables' `routes` to send
    `0.0.0.0/0` to the NAT (see the commented example in that file).
 2. It's a `modules/**` change → add a trigger: touch a comment in
-   `envs/vpc/DioProjects-us-east-1-sauron-vpc-DEV/terraform.tfvars`.
+   `envs/sauron-vpc/DioProjects-us-east-1-sauron-vpc-DEV/terraform.tfvars`.
 3. Commit + push to `main`, approve the apply. (~$32/mo while enabled.)
 
 > Toggling NAT churns the public routes (the `route-tables` module keys routes by
@@ -147,7 +147,7 @@ for e in sauron-ecs-fargate sauron-alb sauron-rds sauron-security-groups; do
   ( cd envs/$e/DioProjects-us-east-1-$e-DEV && terraform destroy -auto-approve )
 done
 # NAT: re-comment it in modules/solutions/vpc/main.tf, then re-apply the vpc env
-( cd envs/vpc/DioProjects-us-east-1-sauron-vpc-DEV && terraform apply -auto-approve )
+( cd envs/sauron-vpc/DioProjects-us-east-1-sauron-vpc-DEV && terraform apply -auto-approve )
 ```
 
 Keeps the VPC/subnets/IGW, state backend, ECR image, and IAM/OIDC roles (all free/pennies).
