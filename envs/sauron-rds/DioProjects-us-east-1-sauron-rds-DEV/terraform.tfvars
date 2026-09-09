@@ -1,6 +1,6 @@
 env_name  = "sauron"
 env_type  = "DEV"
-rds_sg_id = "sg-0dd8eb6457a6c66fd" # sauron-security-groups output: rds_sg_id
+rds_sg_id = "sg-06c289eb389b01513" # sauron-security-groups output: rds_sg_id
 
 db = {
   engine                  = "postgres"
