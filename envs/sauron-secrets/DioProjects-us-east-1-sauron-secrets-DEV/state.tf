@@ -4,7 +4,6 @@ terraform {
     bucket         = "sauron-cicd-tfstate"
     key            = "sauron-secrets/DioProjects-us-east-1-sauron-secrets-DEV/terraform.tfstate"
     dynamodb_table = "sauron-cicd-tfstate"
-    use_lockfile   = true
     encrypt        = "true"
   }
 }
