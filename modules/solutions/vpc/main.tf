@@ -60,15 +60,9 @@ module "route_tables" {
             "${local.environment_name}-Subnet-Private-${upper(v["name_suffix"])}"
           ].id
         ]
-        # Private subnets egress to the internet (e.g. ECR image pulls) via the single NAT gateway (~$32/month)
-        routes = [
-          {
-            destination_cidr_block = "0.0.0.0/0"
-            nat_gateway_id = module.nat_gateways.nat_gateways[
-              "${local.environment_name}-NAT-${upper(local.azs[0]["name_suffix"])}"
-            ].id
-          }
-        ]
+        # NAT gateway is off (teardown) - no private egress. Restore the 0.0.0.0/0 route
+        # via module.nat_gateways below when standing the app back up.
+        routes = []
       }
     }
   )
@@ -76,11 +70,11 @@ module "route_tables" {
 
 # NAT gateway — lets private subnets (ECS tasks, RDS) reach the internet, e.g. pull images from ECR (~$32/month)
 # Single NAT in the first AZ, shared by all private route tables (cost-optimized; not HA across AZs).
-module "nat_gateways" {
-  source = "../../resources/nat-gateways"
-  nat_gateways = {
-    "${local.environment_name}-NAT-${upper(local.azs[0]["name_suffix"])}" = {
-      subnet_id = module.subnets_public.subnets["${local.environment_name}-Subnet-Public-${upper(local.azs[0]["name_suffix"])}"].id
-    }
-  }
-}
+# module "nat_gateways" {
+#   source = "../../resources/nat-gateways"
+#   nat_gateways = {
+#     "${local.environment_name}-NAT-${upper(local.azs[0]["name_suffix"])}" = {
+#       subnet_id = module.subnets_public.subnets["${local.environment_name}-Subnet-Public-${upper(local.azs[0]["name_suffix"])}"].id
+#     }
+#   }
+# }

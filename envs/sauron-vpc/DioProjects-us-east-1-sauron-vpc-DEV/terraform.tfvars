@@ -7,3 +7,5 @@ env_type = "DEV"
 vpc = {
   cidr_block = "10.0.0.0/20"
 }
+
+# NAT gateway turned off 2026-09-17 after the meetup demo (see undeploy-app-with-ecs.md step 5).
