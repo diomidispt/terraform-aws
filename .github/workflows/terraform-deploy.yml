@@ -33,11 +33,17 @@ jobs:
           else
             changed=$(git diff --name-only "${{ github.event.before }}" "${{ github.sha }}")
           fi
+          # Skip directories that no longer exist in the tree. Deleting an env
+          # folder shows up in the diff like any other change, and without this
+          # filter the plan loop cd's into a path that is gone and the run fails.
+          # Removing a folder is not how you tear an env down - run
+          # terraform-destroy.yml on it first, then delete the folder.
           envs=$(echo "$changed" \
             | grep '^envs/' \
             | grep -v '/common/' \
             | sed 's|/[^/]*$||' \
             | sort -u \
+            | while read -r dir; do [ -d "$dir" ] && echo "$dir"; done \
             | tr '\n' ' ' \
             | xargs)
           echo "Detected: $envs"
